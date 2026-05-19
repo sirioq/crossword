@@ -160,7 +160,10 @@ body {
   font-weight: 700; margin-bottom: 40px;
 }
 .level-cards {
-  display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 160px);
+  gap: 24px;
+  justify-content: center;
 }
 .level-card {
   background: rgba(255,255,255,0.92);
@@ -428,6 +431,11 @@ body.theme-winter     .jungle-only     { opacity: 0 !important; }
       <span class="lc-name" style="color:#0d47a1">Seaside</span>
       <div class="lc-stars" id="stars-seaside">☆☆☆</div>
     </button>
+    <button class="level-card" onclick="startLevel('underwater')">
+      <span class="lc-emoji">🌊</span>
+      <span class="lc-name" style="color:#0a5c8a">Underwater</span>
+      <div class="lc-stars" id="stars-underwater">☆☆☆</div>
+    </button>
     <button class="level-card" onclick="startLevel('jungle')">
       <span class="lc-emoji">🌴</span>
       <span class="lc-name" style="color:#1b5e20">Jungle</span>
@@ -437,11 +445,6 @@ body.theme-winter     .jungle-only     { opacity: 0 !important; }
       <span class="lc-emoji">❄️</span>
       <span class="lc-name" style="color:#0d47a1">Winter</span>
       <div class="lc-stars" id="stars-winter">☆☆☆</div>
-    </button>
-    <button class="level-card" onclick="startLevel('underwater')">
-      <span class="lc-emoji">🌊</span>
-      <span class="lc-name" style="color:#0a5c8a">Underwater</span>
-      <div class="lc-stars" id="stars-underwater">☆☆☆</div>
     </button>
   </div>
 </div>
