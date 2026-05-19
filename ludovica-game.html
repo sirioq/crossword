@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tilli's Crossword!</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  position: relative;
+}
+
+/* ── BACKGROUNDS ── */
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0;
+  transition: opacity 0.8s;
+}
+
+.bg-seaside {
+  background: linear-gradient(180deg,
+    #87ceeb 0%, #b0e0ff 35%, #e0f4ff 55%,
+    #f5e6c8 57%, #e8d5a3 62%,
+    #4ab8e8 64%, #1a8ec8 80%, #0d6fa8 100%);
+}
+.bg-underwater {
+  background: linear-gradient(180deg,
+    #0a1628 0%, #0d2744 20%, #0e3d6e 45%,
+    #0a5c8a 65%, #0e7bb5 85%, #1a9fd4 100%);
+}
+
+.bg-sun-seaside {
+  position: fixed; top: 30px; right: 40px; z-index: 1;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, #ffe566 60%, #ffcd00);
+  border-radius: 50%;
+  box-shadow: 0 0 40px 20px rgba(255,220,0,0.35);
+  animation: pulse-sun 3s ease-in-out infinite;
+  transition: opacity 0.8s;
+}
+.bg-sun-underwater {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
+  background: radial-gradient(ellipse at 50% 0%, rgba(30,120,180,0.3) 0%, transparent 60%);
+  pointer-events: none;
+  animation: pulse-sun 4s ease-in-out infinite;
+  transition: opacity 0.8s;
+}
+@keyframes pulse-sun { 0%,100%{opacity:0.7} 50%{opacity:1} }
+
+/* Clouds */
+.cloud-seaside {
+  position: fixed; z-index: 1;
+  background: white; border-radius: 50px; opacity: 0.85;
+  animation: drift linear infinite;
+  transition: opacity 0.8s;
+}
+.cloud-seaside::before, .cloud-seaside::after {
+  content:''; position:absolute; background:white; border-radius:50%;
+}
+.cloud-seaside::before { width:60%; height:150%; top:-40%; left:15%; }
+.cloud-seaside::after  { width:40%; height:120%; top:-30%; right:10%; }
+@keyframes drift { from{transform:translateX(-200px)} to{transform:translateX(110vw)} }
+
+/* Bubbles */
+.bubble {
+  position: fixed; z-index: 1;
+  background: transparent;
+  border: 2px solid rgba(150,220,255,0.5);
+  border-radius: 50%;
+  animation: bubble-rise linear infinite;
+  transition: opacity 0.8s;
+}
+@keyframes bubble-rise {
+  0%   { transform: translateY(calc(100vh + 60px)) scale(1);   opacity: 0.6; }
+  100% { transform: translateY(-60px)              scale(1.2); opacity: 0.6; }
+}
+
+/* Kites (seaside) */
+.kite {
+  position: fixed; z-index: 1;
+  font-size: 34px; line-height: 1;
+  animation: kite-fly linear infinite;
+  user-select: none; pointer-events: none;
+  transition: opacity 0.8s;
+}
+@keyframes kite-fly {
+  0%   { transform: translateX(-150px) translateY(0px); }
+  30%  { transform: translateX(28vw)   translateY(-20px); }
+  55%  { transform: translateX(55vw)   translateY(12px); }
+  80%  { transform: translateX(82vw)   translateY(-10px); }
+  100% { transform: translateX(calc(100vw + 150px)) translateY(0px); }
+}
+
+/* Fish (underwater, right to left) */
+.fish {
+  position: fixed; z-index: 1;
+  font-size: 30px; line-height: 1;
+  animation: fish-swim linear infinite;
+  user-select: none; pointer-events: none;
+  transition: opacity 0.8s;
+}
+@keyframes fish-swim {
+  0%   { transform: translateX(calc(100vw + 150px)) translateY(0px); }
+  30%  { transform: translateX(72vw)   translateY(-12px); }
+  55%  { transform: translateX(45vw)   translateY(10px); }
+  80%  { transform: translateX(18vw)   translateY(-8px); }
+  100% { transform: translateX(-150px) translateY(0px); }
+}
+
+/* Seacraft — right to left (shared by both levels, different emoji) */
+.seacraft {
+  position: fixed; z-index: 1;
+  font-size: 34px; line-height: 1;
+  animation: sea-move linear infinite;
+  user-select: none; pointer-events: none;
+  transition: opacity 0.8s;
+}
+@keyframes sea-move {
+  0%   { transform: translateX(calc(100vw + 150px)) translateY(0px); }
+  40%  { transform: translateX(62vw)   translateY(-8px); }
+  60%  { transform: translateX(38vw)   translateY(8px); }
+  100% { transform: translateX(-150px) translateY(0px); }
+}
+
+/* Waves/seabed */
+.waves {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1;
+  height: 60px; overflow: hidden; transition: opacity 0.8s;
+}
+.wave-svg { width:200%; animation: wave-move 4s linear infinite; }
+@keyframes wave-move { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* ── LEVEL SELECT SCREEN ── */
+#screen-select {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  width: 100%;
+}
+.select-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(36px, 8vw, 64px);
+  color: #fff;
+  text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+  margin-bottom: 8px;
+  text-align: center;
+}
+.select-sub {
+  font-size: 18px; color: rgba(255,255,255,0.85);
+  font-weight: 700; margin-bottom: 40px;
+}
+.level-cards {
+  display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;
+}
+.level-card {
+  background: rgba(255,255,255,0.92);
+  border: none; border-radius: 24px;
+  padding: 28px 24px 22px;
+  cursor: pointer; text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  transition: transform .18s, box-shadow .18s;
+  min-width: 160px;
+}
+.level-card:hover { transform: translateY(-6px) scale(1.04); box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
+.level-card .lc-emoji { font-size: 52px; display: block; margin-bottom: 10px; }
+.level-card .lc-name  { font-family: 'Fredoka One', cursive; font-size: 22px; }
+.level-card .lc-stars { font-size: 20px; margin-top: 6px; letter-spacing: 3px; }
+
+/* ── GAME SCREEN ── */
+#screen-game {
+  position: relative; z-index: 10;
+  display: none; flex-direction: column; align-items: center;
+  width: 100%; padding: 16px 12px 60px;
+}
+#screen-game.active { display: flex; }
+
+h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(28px, 6vw, 48px);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  margin-bottom: 4px; text-align: center;
+}
+.subtitle { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+
+.back-btn {
+  position: absolute; top: 16px; left: 16px;
+  background: rgba(255,255,255,0.85); border: none; border-radius: 50%;
+  width: 42px; height: 42px; font-size: 20px; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15); transition: transform .15s;
+  z-index: 20;
+}
+.back-btn:hover { transform: scale(1.1); }
+
+.prog-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.prog-bg  { width:180px; height:13px; border-radius:99px; overflow:hidden; background:rgba(255,255,255,0.3); }
+.prog-fill { height:100%; border-radius:99px; transition:width .5s; }
+.prog-lbl { font-weight:800; font-size:14px; min-width:40px; }
+
+.hint-bar {
+  border-radius:16px; padding:10px 16px;
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.12);
+  width:100%; max-width:500px; min-height:58px;
+}
+.h-icon { font-size:36px; }
+.h-info { flex:1; }
+.h-dir  { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+.h-boxes { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+.lb {
+  width:28px; height:30px; border:2.5px solid; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Fredoka One',cursive; font-size:16px;
+}
+
+.grid-outer {
+  border-radius:20px; padding:12px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.14);
+  margin-bottom:14px; overflow-x:auto;
+  max-width:calc(100vw - 24px);
+  -webkit-overflow-scrolling:touch;
+}
+.cw-table { border-collapse:collapse; }
+.cw-table td { width:44px; height:44px; min-width:44px; padding:0; text-align:center; vertical-align:middle; }
+.c-blank  { background:transparent; }
+.c-emoji  { background:transparent; font-size:26px; line-height:1; cursor:pointer; border-radius:8px; user-select:none; transition:background .15s, transform .12s; }
+.c-emoji:hover { background:rgba(255,255,255,0.25); }
+.c-emoji.sel   { background:rgba(255,255,255,0.4); transform:scale(1.15); }
+.c-emoji.done  { opacity:0.3; }
+.c-letter { border:2.5px solid; border-radius:8px; cursor:pointer; transition:background .15s, border-color .15s; }
+.c-letter input {
+  width:100%; height:100%; border:none; background:transparent;
+  text-align:center; font-family:'Fredoka One',cursive;
+  font-size:20px; text-transform:uppercase;
+  outline:none; cursor:pointer; caret-color:transparent; padding:0; display:block;
+}
+.c-letter input.err { animation:shk .3s; }
+@keyframes shk { 0%,100%{transform:translateX(0)} 30%{transform:translateX(-4px)} 70%{transform:translateX(4px)} }
+
+.keyboard { width:100%; max-width:500px; }
+.kb-row   { display:flex; justify-content:center; gap:5px; margin-bottom:6px; }
+.kb-key {
+  width:32px; height:44px; border:none; border-radius:8px;
+  font-family:'Fredoka One',cursive; font-size:16px; cursor:pointer;
+  box-shadow:0 3px 8px rgba(0,0,0,0.18); transition:transform .1s, background .1s;
+  flex-shrink:0;
+}
+.kb-key:active { transform:scale(.87); }
+.kb-key.del { width:52px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; }
+
+/* ── WIN OVERLAY ── */
+.win-ov {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+  z-index:200; align-items:center; justify-content:center;
+}
+.win-ov.show { display:flex; }
+.win-box {
+  background:white; border-radius:24px; padding:36px 32px; text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  animation:pop .4s cubic-bezier(.36,1.5,.6,1); max-width:90vw;
+}
+@keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+.win-box .trophy { font-size:72px; }
+.win-box h2 { font-family:'Fredoka One',cursive; font-size:42px; color:#f57f17; margin:10px 0 6px; }
+.win-box p  { font-size:17px; color:#888; font-weight:700; }
+.win-box .stars { font-size:42px; margin:14px 0 16px; letter-spacing:6px; }
+.win-box .next-btn {
+  background:#6c63ff; color:white; border:none; border-radius:14px;
+  padding:12px 28px; font-family:'Fredoka One',cursive; font-size:20px;
+  cursor:pointer; box-shadow:0 4px 14px rgba(108,99,255,0.4);
+  transition:transform .15s;
+}
+.win-box .next-btn:hover { transform:scale(1.05); }
+
+.cfp {
+  position:fixed; pointer-events:none;
+  animation:cf linear forwards; z-index:300;
+}
+@keyframes cf {
+  0%   { opacity:1; transform:translateY(-10px) rotate(0deg); }
+  100% { opacity:0; transform:translateY(105vh) rotate(720deg); }
+}
+
+/* ── JUNGLE BACKGROUND ── */
+.bg-jungle {
+  background: linear-gradient(
+    180deg,
+    #1a3a1a 0%,
+    #1b5e20 25%,
+    #2e7d32 55%,
+    #388e3c 75%,
+    #1b5e20 100%
+  );
+}
+
+/* ── THEME VISIBILITY ── */
+/* On body.theme-seaside: show seaside elements, hide underwater */
+body.theme-seaside    .seaside-only    { opacity: 1 !important; }
+body.theme-seaside    .underwater-only { opacity: 0 !important; }
+body.theme-seaside    .jungle-only     { opacity: 0 !important; }
+body.theme-underwater .underwater-only { opacity: 1 !important; }
+body.theme-underwater .seaside-only    { opacity: 0 !important; }
+body.theme-underwater .jungle-only     { opacity: 0 !important; }
+body.theme-jungle     .jungle-only     { opacity: 1 !important; }
+body.theme-jungle     .seaside-only    { opacity: 0 !important; }
+body.theme-jungle     .underwater-only { opacity: 0 !important; }
+.seaside-only, .underwater-only, .jungle-only { opacity: 0; }
+
+/* ── THEME COLOURS applied via JS ── */
+</style>
+</head>
+<body>
+
+<!-- ── BACKGROUNDS (both always present, opacity toggled) ── -->
+<div class="bg-layer bg-seaside seaside-only" id="bg-seaside"></div>
+<div class="bg-layer bg-jungle jungle-only" id="bg-jungle"></div>
+
+<div class="bg-layer bg-underwater underwater-only" id="bg-underwater"></div>
+
+<div class="bg-sun-seaside seaside-only" id="bgsun-seaside" style="opacity:0"></div>
+<div class="bg-sun-underwater underwater-only" id="bgsun-underwater" style="opacity:0"></div>
+
+<!-- Seaside clouds -->
+<div class="cloud-seaside seaside-only" id="c1" style="width:120px;height:40px;top:8%;animation-duration:28s;animation-delay:0s"></div>
+<div class="cloud-seaside seaside-only" id="c2" style="width:80px;height:28px;top:14%;animation-duration:22s;animation-delay:-10s"></div>
+<div class="cloud-seaside seaside-only" id="c3" style="width:100px;height:34px;top:6%;animation-duration:35s;animation-delay:-18s"></div>
+
+<!-- Underwater bubbles -->
+<div class="bubble underwater-only" id="b1" style="width:18px;height:18px;left:10%;animation-duration:8s;animation-delay:0s""></div>
+<div class="bubble underwater-only" id="b2" style="width:10px;height:10px;left:25%;animation-duration:6s;animation-delay:-2s""></div>
+<div class="bubble underwater-only" id="b3" style="width:24px;height:24px;left:40%;animation-duration:10s;animation-delay:-4s""></div>
+<div class="bubble underwater-only" id="b4" style="width:14px;height:14px;left:55%;animation-duration:7s;animation-delay:-1s""></div>
+<div class="bubble underwater-only" id="b5" style="width:20px;height:20px;left:70%;animation-duration:9s;animation-delay:-5s""></div>
+<div class="bubble underwater-only" id="b6" style="width:12px;height:12px;left:85%;animation-duration:6s;animation-delay:-3s""></div>
+
+<!-- Seaside kites (left→right) -->
+<div class="kite seaside-only" id="k1" style="left:0;top:5%;animation-duration:22s;animation-delay:0s">🪁</div>
+<div class="kite seaside-only" id="k2" style="left:0;top:10%;animation-duration:30s;animation-delay:-8s">🪁</div>
+<div class="kite seaside-only" id="k3" style="left:0;top:3%;animation-duration:18s;animation-delay:-14s">🪁</div>
+<div class="kite seaside-only" id="k4" style="left:0;top:8%;animation-duration:26s;animation-delay:-4s">🪁</div>
+<div class="kite seaside-only" id="k5" style="left:0;top:6%;animation-duration:34s;animation-delay:-20s">🪁</div>
+
+<!-- Underwater fish (right→left) -->
+<div class="fish underwater-only" id="f1" style="left:0;top:20%;animation-duration:18s;animation-delay:0s">🐠</div>
+<div class="fish underwater-only" id="f2" style="left:0;top:35%;animation-duration:26s;animation-delay:-8s">🐡</div>
+<div class="fish underwater-only" id="f3" style="left:0;top:15%;animation-duration:22s;animation-delay:-14s">🐟</div>
+<div class="fish underwater-only" id="f4" style="left:0;top:50%;animation-duration:30s;animation-delay:-4s">🐠</div>
+<div class="fish underwater-only" id="f5" style="left:0;top:65%;animation-duration:20s;animation-delay:-18s">🐟</div>
+
+<!-- Jungle animals right→left at bottom, leaves left→right at top -->
+<div class="seacraft jungle-only" id="j1" style="left:0;bottom:8%;animation-duration:22s;animation-delay:0s">🦁</div>
+<div class="seacraft jungle-only" id="j2" style="left:0;bottom:12%;animation-duration:30s;animation-delay:-8s">🐆</div>
+<div class="seacraft jungle-only" id="j3" style="left:0;bottom:7%;animation-duration:18s;animation-delay:-14s">🦁</div>
+<div class="seacraft jungle-only" id="j4" style="left:0;bottom:11%;animation-duration:26s;animation-delay:-4s">🐒</div>
+<div class="seacraft jungle-only" id="j5" style="left:0;bottom:9%;animation-duration:34s;animation-delay:-20s">🐆</div>
+<div class="kite jungle-only" id="jl1" style="left:0;top:4%;animation-duration:20s;animation-delay:0s">🍃</div>
+<div class="kite jungle-only" id="jl2" style="left:0;top:9%;animation-duration:28s;animation-delay:-7s">🌿</div>
+<div class="kite jungle-only" id="jl3" style="left:0;top:5%;animation-duration:16s;animation-delay:-12s">🍃</div>
+<div class="kite jungle-only" id="jl4" style="left:0;top:8%;animation-duration:24s;animation-delay:-3s">🌿</div>
+<div class="kite jungle-only" id="jl5" style="left:0;top:6%;animation-duration:32s;animation-delay:-18s">🍃</div>
+
+<!-- Seaside seacraft (right→left) -->
+<div class="seacraft" id="s1" style="left:0;bottom:9%;animation-duration:20s;animation-delay:0s">🏄</div>
+<div class="seacraft" id="s2" style="left:0;bottom:13%;animation-duration:28s;animation-delay:-7s">⛵</div>
+<div class="seacraft" id="s3" style="left:0;bottom:7%;animation-duration:16s;animation-delay:-13s">🏄‍♀️</div>
+<div class="seacraft" id="s4" style="left:0;bottom:11%;animation-duration:24s;animation-delay:-3s">⛵</div>
+<div class="seacraft" id="s5" style="left:0;bottom:8%;animation-duration:32s;animation-delay:-18s">🏄</div>
+<div class="seacraft" id="s6" style="left:0;bottom:14%;animation-duration:19s;animation-delay:-10s">⛵</div>
+<div class="seacraft" id="s7" style="left:0;bottom:10%;animation-duration:22s;animation-delay:-5s">🏄‍♀️</div>
+
+<!-- Waves strip -->
+<div class="waves" id="waves-el">
+  <svg class="wave-svg" id="wave-svg" viewBox="0 0 1440 60" preserveAspectRatio="none" style="height:60px">
+    <path id="wave-path1" d="M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.4)"/>
+    <path id="wave-path2" d="M0,40 C180,10 360,50 540,40 C720,10 900,50 1080,40 C1260,10 1440,50 1440,40 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.2)"/>
+  </svg>
+</div>
+
+<!-- ── LEVEL SELECT ── -->
+<div id="screen-select">
+  <div class="select-title">🌟 Tilli's<br>Crossword!</div>
+  <p class="select-sub">Choose a level to play</p>
+  <div class="level-cards">
+    <button class="level-card" onclick="startLevel('seaside')">
+      <span class="lc-emoji">🏖️</span>
+      <span class="lc-name" style="color:#0d47a1">Seaside</span>
+      <div class="lc-stars" id="stars-seaside">☆☆☆</div>
+    </button>
+    <button class="level-card" onclick="startLevel('jungle')">
+      <span class="lc-emoji">🌴</span>
+      <span class="lc-name" style="color:#1b5e20">Jungle</span>
+      <div class="lc-stars" id="stars-jungle">☆☆☆</div>
+    </button>
+    <button class="level-card" onclick="startLevel('underwater')">
+      <span class="lc-emoji">🌊</span>
+      <span class="lc-name" style="color:#0a5c8a">Underwater</span>
+      <div class="lc-stars" id="stars-underwater">☆☆☆</div>
+    </button>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div id="screen-game">
+  <button class="back-btn" onclick="goBack()">←</button>
+  <h1 id="game-title"></h1>
+  <p class="subtitle" id="game-sub"></p>
+  <div class="prog-row">
+    <div class="prog-bg"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+    <span class="prog-lbl" id="pl"></span>
+  </div>
+  <div class="hint-bar" id="hint-bar">
+    <span class="h-icon" id="hi">❓</span>
+    <div class="h-info">
+      <div class="h-dir" id="hd">Tap a picture clue to begin!</div>
+      <div class="h-boxes" id="hb"></div>
+    </div>
+  </div>
+  <div class="grid-outer" id="grid-outer">
+    <table class="cw-table" id="cwt"></table>
+  </div>
+  <div class="keyboard" id="kbd"></div>
+</div>
+
+<!-- Win overlay -->
+<div class="win-ov" id="win">
+  <div class="win-box">
+    <div class="trophy">🏆</div>
+    <h2>Amazing!</h2>
+    <p id="win-msg"></p>
+    <div class="stars">⭐⭐⭐</div>
+    <button class="next-btn" id="win-next" onclick="goBack()">🏠 Choose Level</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  LEVEL DATA
+// ═══════════════════════════════════════════════════════
+const SUB_SVG = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2080%2048%22%3E%3Cellipse%20cx%3D%2236%22%20cy%3D%2232%22%20rx%3D%2228%22%20ry%3D%2213%22%20fill%3D%22%237ab3d4%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%2226%22%20y%3D%2217%22%20width%3D%2216%22%20height%3D%2211%22%20rx%3D%224%22%20fill%3D%22%235a9bc0%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Crect%20x%3D%2234%22%20y%3D%228%22%20width%3D%223%22%20height%3D%2211%22%20rx%3D%221.5%22%20fill%3D%22%233a7fa8%22/%3E%3Crect%20x%3D%2230%22%20y%3D%228%22%20width%3D%227%22%20height%3D%223%22%20rx%3D%221.5%22%20fill%3D%22%233a7fa8%22/%3E%3Crect%20x%3D%2220%22%20y%3D%2223%22%20width%3D%2211%22%20height%3D%223%22%20rx%3D%221%22%20fill%3D%22%235a9bc0%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%220.8%22/%3E%3Ccircle%20cx%3D%2222%22%20cy%3D%2232%22%20r%3D%224.5%22%20fill%3D%22white%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2222%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%234a9fd4%22/%3E%3Ccircle%20cx%3D%2236%22%20cy%3D%2232%22%20r%3D%224.5%22%20fill%3D%22white%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2236%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%234a9fd4%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2232%22%20r%3D%224.5%22%20fill%3D%22white%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2232%22%20r%3D%223%22%20fill%3D%22%234a9fd4%22/%3E%3Cpolygon%20points%3D%2262%2C26%2074%2C19%2074%2C32%2062%2C32%22%20fill%3D%22%235a9bc0%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Cpolygon%20points%3D%2262%2C32%2074%2C32%2074%2C44%2062%2C38%22%20fill%3D%22%235a9bc0%22%20stroke%3D%22%233a7fa8%22%20stroke-width%3D%221.2%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2232%22%20r%3D%222.2%22%20fill%3D%22%233a7fa8%22/%3E%3Cellipse%20cx%3D%2270%22%20cy%3D%2226%22%20rx%3D%222.8%22%20ry%3D%225%22%20fill%3D%22%23c0392b%22%20transform%3D%22rotate%28-15%2070%2026%29%22/%3E%3Cellipse%20cx%3D%2270%22%20cy%3D%2238%22%20rx%3D%222.8%22%20ry%3D%225%22%20fill%3D%22%23c0392b%22%20transform%3D%22rotate%28-15%2070%2038%29%22/%3E%3C/svg%3E';
+
+const LEVELS = {
+  seaside: {
+    title:    "🏖️ Seaside",
+    subtitle: "Find all 7 seaside words!",
+    winMsg:   "You found all 7 seaside words!",
+    GR: 8, GC: 9,
+    // Heading / UI colours
+    headColor:   "#0d47a1",
+    headShadow:  "#ffe082",
+    subColor:    "#555",
+    progColor:   "#1565c0",
+    progBg:      "#bbdefb",
+    hintBg:      "rgba(255,255,255,0.92)",
+    hintDirColor:"#aaa",
+    lbBorder:    "#ddd",
+    lbColor:     "#333",
+    lbBg:        "#fafafa",
+    lbFilledBorder:"#1565c0", lbFilledBg:"#e3f2fd",
+    lbOkBorder:  "#2e7d32",  lbOkBg:"#e8f5e9", lbOkColor:"#2e7d32",
+    gridBg:      "rgba(255,255,255,0.93)",
+    cellBorder:  "#90caf9",
+    cellBg:      "#f0f8ff",
+    cellColor:   "#1a237e",
+    cellHiBg:    "#fff9c4",  cellHiBorder:"#f9a825",
+    cellOkBg:    "#e8f5e9",  cellOkBorder:"#2e7d32",
+    inputOk:     "#2e7d32",  inputErr:"#b71c1c",
+    kbBg:        "rgba(255,255,255,0.9)",
+    kbActive:    "#ddeeff",
+    kbColor:     "#333",
+    // Special emoji overrides: { visRow: { visCol: wi } }
+    emojiOverrides: { 3: { 1: 6, 2: 2 } },
+    WORDS: [
+      { word:"SUN",      emoji:"☀️",  dir:"across", row:0, col:4 },
+      { word:"UMBRELLA", emoji:"⛱️",  dir:"down",   row:0, col:5 },
+      { word:"CRAB",     emoji:"🦀",  dir:"across", row:2, col:2 },
+      { word:"ROCK",     emoji:"🪨",  dir:"across", row:3, col:5 },
+      { word:"SHELL",    emoji:"🐚",  dir:"across", row:5, col:1 },
+      { word:"WAVE",     emoji:"🌊",  dir:"across", row:7, col:4 },
+      { word:"FISH",     emoji:"🐟",  dir:"down",   row:3, col:1 },
+    ],
+  },
+  jungle: {
+    title:    "🌴 Jungle",
+    subtitle: "Find all 7 jungle animals!",
+    winMsg:   "You found all 7 jungle animals!",
+    GR: 8, GC: 11,
+    headColor:   "#1b5e20",
+    headShadow:  "#a5d6a7",
+    subColor:    "#2e7d32",
+    progColor:   "#2e7d32",
+    progBg:      "#c8e6c9",
+    hintBg:      "rgba(255,255,255,0.92)",
+    hintDirColor:"#aaa",
+    lbBorder:    "#ddd",    lbColor:"#333",     lbBg:"#fafafa",
+    lbFilledBorder:"#2e7d32", lbFilledBg:"#e8f5e9",
+    lbOkBorder:  "#f57f17", lbOkBg:"#fff3e0",  lbOkColor:"#f57f17",
+    gridBg:      "rgba(255,255,255,0.93)",
+    cellBorder:  "#a5d6a7", cellBg:"#f1f8e9",  cellColor:"#1b5e20",
+    cellHiBg:    "#fff9c4", cellHiBorder:"#f9a825",
+    cellOkBg:    "#e8f5e9", cellOkBorder:"#2e7d32",
+    inputOk:     "#2e7d32", inputErr:"#b71c1c",
+    kbBg:        "rgba(255,255,255,0.9)",
+    kbActive:    "#c8e6c9",
+    kbColor:     "#1b5e20",
+    emojiOverrides: {},
+    WORDS: [
+      { word:"ORANGUTAN", emoji:"🦧", dir:"across", row:0, col:0 },
+      { word:"TIGER",     emoji:"🐯", dir:"across", row:2, col:0 },
+      { word:"ELEPHANT",  emoji:"🐘", dir:"across", row:4, col:3 },
+      { word:"GIRAFFE",   emoji:"🦒", dir:"across", row:6, col:1 },
+      { word:"RHINO",     emoji:"🦏", dir:"down",   row:0, col:1 },
+      { word:"GORILLA",   emoji:"🦍", dir:"down",   row:0, col:4 },
+      { word:"MONKEY",    emoji:"🐒", dir:"down",   row:2, col:9 },
+    ],
+  },
+  underwater: {
+    title:    "🌊 Under the Sea!",
+    subtitle: "Find all 7 underwater words!",
+    winMsg:   "You found all 7 underwater words!",
+    GR: 9, GC: 9,
+    headColor:   "#7ff0ff",
+    headShadow:  "#005577",
+    subColor:    "#a0e4f8",
+    progColor:   "#00aad4",
+    progBg:      "rgba(0,100,160,0.4)",
+    hintBg:      "rgba(0,20,60,0.85)",
+    hintDirColor:"#5ab8d8",
+    lbBorder:    "#1a6ea8",
+    lbColor:     "#e0f8ff",
+    lbBg:        "rgba(0,30,70,0.7)",
+    lbFilledBorder:"#00aad4", lbFilledBg:"rgba(0,100,160,0.5)",
+    lbOkBorder:  "#00e676",  lbOkBg:"rgba(0,80,40,0.5)", lbOkColor:"#00e676",
+    gridBg:      "rgba(0,20,60,0.75)",
+    cellBorder:  "#1a6ea8",
+    cellBg:      "rgba(10,40,80,0.6)",
+    cellColor:   "#e0f8ff",
+    cellHiBg:    "rgba(0,120,180,0.5)", cellHiBorder:"#00ccff",
+    cellOkBg:    "rgba(0,80,40,0.6)",   cellOkBorder:"#00e676",
+    inputOk:     "#00e676", inputErr:"#ff5252",
+    kbBg:        "rgba(0,30,80,0.85)",
+    kbActive:    "rgba(0,100,160,0.7)",
+    kbColor:     "#e0f8ff",
+    emojiOverrides: {},
+    WORDS: [
+      { word:"OCTOPUS",   emoji:"🐙", dir:"across", row:1, col:0 },
+      { word:"EEL",       emoji:"🐍", dir:"across", row:5, col:0 },
+      { word:"DIVER",     emoji:"🤿", dir:"across", row:6, col:4 },
+      { word:"SEAWEED",   emoji:"🌿", dir:"across", row:8, col:1 },
+      { word:"LOBSTER",   emoji:"🦞", dir:"down",   row:0, col:0 },
+      { word:"TURTLE",    emoji:"🐢", dir:"down",   row:1, col:2 },
+      { word:"SUBMARINE", emoji:"SVG_SUB", dir:"down",   row:0, col:5 },
+    ],
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+//  BACKGROUND THEME SWITCHER
+// ═══════════════════════════════════════════════════════
+const seasideEls  = ['bg-seaside','bgsun-seaside','c1','c2','c3','k1','k2','k3','k4','k5'];
+const underwaterEls = ['bg-underwater','bgsun-underwater','b1','b2','b3','b4','b5','b6','f1','f2','f3','f4','f5'];
+const seacraftEls = ['s1','s2','s3','s4','s5','s6','s7']; // shown on both, emoji swapped
+
+function setTheme(name) {
+  const isSeaside = name === 'seaside';
+  // Toggle body class — CSS handles all show/hide via .seaside-only / .underwater-only
+  const isJungle = name === 'jungle';
+  document.body.classList.remove('theme-seaside', 'theme-underwater', 'theme-jungle');
+  document.body.classList.add(`theme-${name}`);
+
+  // Seacraft always visible — swap emoji per level
+  const seacraftEmoji = isSeaside
+    ? ['🏄','⛵','🏄‍♀️','⛵','🏄','⛵','🏄‍♀️']
+    : ['🐳','🦈','🐳','🪼','🦈','🐳','🪼'];
+  seacraftEls.forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = seacraftEmoji[i];
+  });
+
+  // Wave / seabed
+  const p1 = document.getElementById('wave-path1');
+  const p2 = document.getElementById('wave-path2');
+  if (isSeaside) {
+    p1.setAttribute('d','M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z');
+    p1.setAttribute('fill','rgba(255,255,255,0.4)');
+    p2.setAttribute('d','M0,40 C180,10 360,50 540,40 C720,10 900,50 1080,40 C1260,10 1440,50 1440,40 L1440,60 L0,60 Z');
+    p2.setAttribute('fill','rgba(255,255,255,0.2)');
+  } else {
+    p1.setAttribute('d','M0,40 C120,20 240,50 360,35 C480,20 600,50 720,35 C840,20 960,50 1080,35 C1200,20 1320,50 1440,35 L1440,60 L0,60 Z');
+    p1.setAttribute('fill','rgba(180,140,80,0.6)');
+    p2.setAttribute('d','M0,50 C180,40 360,55 540,45 C720,35 900,55 1080,45 C1260,35 1440,55 1440,50 L1440,60 L0,60 Z');
+    p2.setAttribute('fill','rgba(140,100,50,0.5)');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════
+let currentLevelName = null;
+let currentLevel = null;
+let cells = [];
+let selW = null;
+let solved = new Set();
+let completedLevels = {};
+
+// ═══════════════════════════════════════════════════════
+//  START LEVEL
+// ═══════════════════════════════════════════════════════
+function startLevel(name) {
+  currentLevelName = name;
+  currentLevel = LEVELS[name];
+  selW = null;
+  solved = new Set();
+
+  setTheme(name);
+  applyThemeStyles(currentLevel);
+
+  document.getElementById('game-title').textContent = currentLevel.title;
+  document.getElementById('game-title').style.color = currentLevel.headColor;
+  document.getElementById('game-title').style.textShadow = `3px 3px 0 ${currentLevel.headShadow}`;
+  document.getElementById('game-sub').textContent = currentLevel.subtitle;
+  document.getElementById('game-sub').style.color = currentLevel.subColor;
+  document.getElementById('win-msg').textContent = currentLevel.winMsg;
+
+  buildGrid();
+  buildKeyboard();
+  updateProg();
+  clearHint();
+
+  document.getElementById('screen-select').style.display = 'none';
+  document.getElementById('screen-game').classList.add('active');
+}
+
+function applyThemeStyles(lv) {
+  const pf = document.getElementById('pf');
+  pf.style.background = lv.progColor;
+  document.querySelector('.prog-bg').style.background = lv.progBg;
+  document.getElementById('pl').style.color = lv.progColor;
+
+  const hb = document.getElementById('hint-bar');
+  hb.style.background = lv.hintBg;
+  document.getElementById('hd').style.color = lv.hintDirColor;
+
+  document.getElementById('grid-outer').style.background = lv.gridBg;
+}
+
+function goBack() {
+  document.getElementById('win').classList.remove('show');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-select').style.display = '';
+  setTheme('seaside'); // default bg on menu
+  // Update stars
+  Object.keys(completedLevels).forEach(name => {
+    const el = document.getElementById('stars-' + name);
+    if (el) el.textContent = '⭐⭐⭐';
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  BUILD GRID
+// ═══════════════════════════════════════════════════════
+function buildGrid() {
+  const lv = currentLevel;
+  const GR = lv.GR, GC = lv.GC;
+  const WORDS = lv.WORDS;
+
+  cells = Array.from({length:GR}, ()=>
+    Array.from({length:GC}, ()=>({letter:'', wids:[], inp:null}))
+  );
+  WORDS.forEach((w,wi)=>{
+    for(let i=0;i<w.word.length;i++){
+      const r = w.dir==='across'?w.row:w.row+i;
+      const c = w.dir==='across'?w.col+i:w.col;
+      cells[r][c].letter = w.word[i];
+      cells[r][c].wids.push(wi);
+    }
+  });
+
+  const VR = GR+1, VC = GC+1;
+  const vis = Array.from({length:VR},()=>Array.from({length:VC},()=>({t:'blank'})));
+
+  for(let r=0;r<GR;r++)
+    for(let c=0;c<GC;c++)
+      if(cells[r][c].letter)
+        vis[r+1][c+1]={t:'letter',gr:r,gc:c};
+
+  // Standard emoji placement
+  WORDS.forEach((w,wi)=>{
+    if(w.dir==='across') vis[w.row+1][w.col]={t:'emoji',wi};
+    else                 vis[w.row][w.col+1]={t:'emoji',wi};
+  });
+
+  // Apply overrides
+  if(lv.emojiOverrides) {
+    Object.entries(lv.emojiOverrides).forEach(([vr,cols])=>{
+      Object.entries(cols).forEach(([vc,wi])=>{
+        vis[vr][vc]={t:'emoji',wi:parseInt(wi)};
+      });
+    });
+  }
+
+  const tbl = document.getElementById('cwt');
+  tbl.innerHTML = '';
+  for(let vr=0;vr<VR;vr++){
+    const tr=document.createElement('tr');
+    for(let vc=0;vc<VC;vc++){
+      const td=document.createElement('td');
+      const v=vis[vr][vc];
+      if(v.t==='blank'){
+        td.className='c-blank';
+      } else if(v.t==='emoji'){
+        td.className='c-emoji';
+        td.id='em'+v.wi;
+        const em=WORDS[v.wi].emoji;
+        if(em==='SVG_SUB'){
+          const img=document.createElement('img');
+          img.src=SUB_SVG; img.width=40; img.height=22;
+          img.style.verticalAlign='middle'; img.style.pointerEvents='none';
+          td.appendChild(img);
+        } else {
+          td.textContent=em;
+        }
+        td.onclick=()=>selWord(v.wi);
+      } else {
+        td.className='c-letter';
+        td.id=`td-${v.gr}-${v.gc}`;
+        td.style.borderColor=currentLevel.cellBorder;
+        td.style.background=currentLevel.cellBg;
+        const inp=document.createElement('input');
+        inp.readOnly=true; inp.maxLength=1;
+        inp.style.color=currentLevel.cellColor;
+        inp.onclick=()=>onCellClick(v.gr,v.gc);
+        td.appendChild(inp);
+        cells[v.gr][v.gc].inp=inp;
+      }
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════
+function buildKeyboard() {
+  const lv = currentLevel;
+  const kb = document.getElementById('kbd');
+  kb.innerHTML = '';
+  [['A','B','C','D','E','F','G','H','I'],
+   ['J','K','L','M','N','O','P','Q','R'],
+   ['S','T','U','V','W','X','Y','Z','⌫']
+  ].forEach(row=>{
+    const div=document.createElement('div');
+    div.className='kb-row';
+    row.forEach(k=>{
+      const b=document.createElement('button');
+      b.className='kb-key'+(k==='⌫'?' del':'');
+      b.textContent=k;
+      b.style.background=lv.kbBg;
+      b.style.color=lv.kbColor;
+      b.onclick=()=>handleKey(k);
+      div.appendChild(b);
+    });
+    kb.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  WORD SELECTION & INPUT
+// ═══════════════════════════════════════════════════════
+function selWord(wi){
+  selW=wi;
+  const w=currentLevel.WORDS[wi];
+  const lv=currentLevel;
+
+  document.querySelectorAll('.c-letter').forEach(td=>{
+    if(!td.classList.contains('correct')){
+      td.classList.remove('hi');
+      td.style.background=lv.cellBg;
+      td.style.borderColor=lv.cellBorder;
+    }
+  });
+  document.querySelectorAll('.c-emoji').forEach(td=>td.classList.remove('sel'));
+
+  for(let i=0;i<w.word.length;i++){
+    const r=w.dir==='across'?w.row:w.row+i;
+    const c=w.dir==='across'?w.col+i:w.col;
+    const td=document.getElementById(`td-${r}-${c}`);
+    if(td&&!td.classList.contains('correct')){
+      td.classList.add('hi');
+      td.style.background=lv.cellHiBg;
+      td.style.borderColor=lv.cellHiBorder;
+    }
+  }
+  const em=document.getElementById('em'+wi);
+  if(em) em.classList.add('sel');
+
+  const hiEl=document.getElementById('hi');
+  if(w.emoji==='SVG_SUB'){
+    hiEl.textContent='';
+    hiEl.innerHTML=`<img src="${SUB_SVG}" width="48" height="27" style="vertical-align:middle">`;
+  } else {
+    hiEl.textContent=w.emoji;
+  }
+  document.getElementById('hd').textContent=w.dir==='across'?'→ across':'↓ down';
+  document.getElementById('hd').style.color=currentLevel.hintDirColor;
+  refreshHint(wi);
+}
+
+function onCellClick(gr,gc){
+  const c=cells[gr][gc];
+  if(!c.wids.length) return;
+  if(selW!==null && c.wids.includes(selW)) return;
+  selWord(c.wids[0]);
+}
+
+function clearHint(){
+  document.getElementById('hi').textContent='❓';
+  document.getElementById('hd').textContent='Tap a picture clue to begin!';
+  document.getElementById('hb').innerHTML='';
+}
+
+function refreshHint(wi){
+  const w=currentLevel.WORDS[wi];
+  const d=document.getElementById('hb');
+  d.innerHTML='';
+  const lv=currentLevel;
+  for(let i=0;i<w.word.length;i++){
+    const r=w.dir==='across'?w.row:w.row+i;
+    const c=w.dir==='across'?w.col+i:w.col;
+    const inp=cells[r][c].inp;
+    const box=document.createElement('div');
+    box.className='lb';
+    const val=inp?.value||'';
+    const isOk=inp?.classList.contains('cor');
+    if(isOk){
+      box.style.borderColor=lv.lbOkBorder; box.style.background=lv.lbOkBg; box.style.color=lv.lbOkColor;
+    } else if(val){
+      box.style.borderColor=lv.lbFilledBorder; box.style.background=lv.lbFilledBg; box.style.color=lv.lbColor;
+    } else {
+      box.style.borderColor=lv.lbBorder; box.style.background=lv.lbBg; box.style.color=lv.lbColor;
+    }
+    if(val) box.textContent=val;
+    d.appendChild(box);
+  }
+}
+
+function handleKey(k){
+  if(selW===null) return;
+  const w=currentLevel.WORDS[selW];
+  if(k==='⌫'){
+    for(let i=w.word.length-1;i>=0;i--){
+      const r=w.dir==='across'?w.row:w.row+i;
+      const c=w.dir==='across'?w.col+i:w.col;
+      const inp=cells[r][c].inp;
+      if(inp&&inp.value&&!inp.classList.contains('cor')){
+        inp.value=''; inp.className='';
+        inp.style.color=currentLevel.cellColor;
+        const td=document.getElementById(`td-${r}-${c}`);
+        if(td){
+          td.classList.remove('correct');
+          td.classList.add('hi');
+          td.style.background=currentLevel.cellHiBg;
+          td.style.borderColor=currentLevel.cellHiBorder;
+        }
+        break;
+      }
+    }
+  } else {
+    for(let i=0;i<w.word.length;i++){
+      const r=w.dir==='across'?w.row:w.row+i;
+      const c=w.dir==='across'?w.col+i:w.col;
+      const inp=cells[r][c].inp;
+      if(inp&&!inp.value){inp.value=k;break;}
+    }
+    checkWord(selW);
+  }
+  refreshHint(selW);
+}
+
+function checkWord(wi){
+  const w=currentLevel.WORDS[wi];
+  const lv=currentLevel;
+  for(let i=0;i<w.word.length;i++){
+    const r=w.dir==='across'?w.row:w.row+i;
+    const c=w.dir==='across'?w.col+i:w.col;
+    if(!cells[r][c].inp?.value) return;
+  }
+  let ok=true;
+  for(let i=0;i<w.word.length;i++){
+    const r=w.dir==='across'?w.row:w.row+i;
+    const c=w.dir==='across'?w.col+i:w.col;
+    if(cells[r][c].inp.value!==w.word[i]){ok=false;break;}
+  }
+  if(ok){
+    solved.add(wi);
+    for(let i=0;i<w.word.length;i++){
+      const r=w.dir==='across'?w.row:w.row+i;
+      const c=w.dir==='across'?w.col+i:w.col;
+      const inp=cells[r][c].inp;
+      inp.className='cor'; inp.style.color=lv.inputOk;
+      const td=document.getElementById(`td-${r}-${c}`);
+      if(td){td.classList.remove('hi');td.classList.add('correct');td.style.background=lv.cellOkBg;td.style.borderColor=lv.cellOkBorder;}
+    }
+    const em=document.getElementById('em'+wi);
+    if(em){em.classList.remove('sel');em.classList.add('done');}
+    updateProg();
+    if(solved.size===currentLevel.WORDS.length) setTimeout(showWin,700);
+  } else {
+    for(let i=0;i<w.word.length;i++){
+      const r=w.dir==='across'?w.row:w.row+i;
+      const c=w.dir==='across'?w.col+i:w.col;
+      const inp=cells[r][c].inp;
+      if(inp&&inp.value!==w.word[i]){
+        inp.className='err'; inp.style.color=lv.inputErr;
+        setTimeout(()=>{ if(inp&&!inp.classList.contains('cor')){ inp.className=''; inp.style.color=lv.cellColor; }},400);
+      }
+    }
+  }
+}
+
+function updateProg(){
+  const n=currentLevel.WORDS.length;
+  document.getElementById('pf').style.width=(solved.size/n*100)+'%';
+  document.getElementById('pl').textContent=`${solved.size} / ${n}`;
+}
+
+function showWin(){
+  completedLevels[currentLevelName]=true;
+  document.getElementById('win').classList.add('show');
+  const cols=['#0d47a1','#ffe082','#1b5e20','#b71c1c','#4a148c','#e65100','#00838f'];
+  for(let i=0;i<120;i++){
+    const el=document.createElement('div');
+    el.className='cfp';
+    const sz=6+Math.random()*10;
+    el.style.cssText=`left:${Math.random()*100}%;top:0;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.4+Math.random()*2}s;animation-delay:${Math.random()*.8}s`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),4500);
+  }
+}
+// Set seaside theme on initial page load
+window.addEventListener('load', () => setTheme('seaside'));
+</script>
+</body>
+</html>
