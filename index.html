@@ -161,7 +161,7 @@ body {
 }
 .level-cards {
   display: grid;
-  grid-template-columns: repeat(2, 160px);
+  grid-template-columns: repeat(3, 160px);
   gap: 24px;
   justify-content: center;
 }
@@ -294,6 +294,18 @@ h1 {
   100% { opacity:0; transform:translateY(105vh) rotate(720deg); }
 }
 
+/* ── SCHOOL BACKGROUND ── */
+.bg-school {
+  background: linear-gradient(
+    180deg,
+    #fff9e6 0%,
+    #fff3c4 30%,
+    #ffe082 60%,
+    #ffb74d 80%,
+    #ff8f00 100%
+  );
+}
+
 /* ── WINTER BACKGROUND ── */
 .bg-winter {
   background: linear-gradient(
@@ -320,10 +332,16 @@ h1 {
 
 /* ── THEME VISIBILITY ── */
 /* On body.theme-seaside: show seaside elements, hide underwater */
+body.theme-school     .school-only     { opacity: 1 !important; }
+body.theme-school     .seaside-only    { opacity: 0 !important; }
+body.theme-school     .underwater-only { opacity: 0 !important; }
+body.theme-school     .jungle-only     { opacity: 0 !important; }
+body.theme-school     .winter-only     { opacity: 0 !important; }
 body.theme-seaside    .seaside-only    { opacity: 1 !important; }
 body.theme-seaside    .underwater-only { opacity: 0 !important; }
 body.theme-seaside    .jungle-only     { opacity: 0 !important; }
 body.theme-seaside    .winter-only     { opacity: 0 !important; }
+body.theme-seaside    .school-only     { opacity: 0 !important; }
 body.theme-underwater .underwater-only { opacity: 1 !important; }
 body.theme-underwater .seaside-only    { opacity: 0 !important; }
 body.theme-underwater .jungle-only     { opacity: 0 !important; }
@@ -336,7 +354,7 @@ body.theme-winter     .winter-only     { opacity: 1 !important; }
 body.theme-winter     .seaside-only    { opacity: 0 !important; }
 body.theme-winter     .underwater-only { opacity: 0 !important; }
 body.theme-winter     .jungle-only     { opacity: 0 !important; }
-.seaside-only, .underwater-only, .jungle-only, .winter-only { opacity: 0; }
+.seaside-only, .underwater-only, .jungle-only, .winter-only, .school-only { opacity: 0; }
 
 /* ── THEME COLOURS applied via JS ── */
 </style>
@@ -345,6 +363,7 @@ body.theme-winter     .jungle-only     { opacity: 0 !important; }
 
 <!-- ── BACKGROUNDS (both always present, opacity toggled) ── -->
 <div class="bg-layer bg-seaside seaside-only" id="bg-seaside"></div>
+<div class="bg-layer bg-school school-only" id="bg-school"></div>
 <div class="bg-layer bg-winter winter-only" id="bg-winter"></div>
 <div class="bg-layer bg-jungle jungle-only" id="bg-jungle"></div>
 
@@ -379,6 +398,18 @@ body.theme-winter     .jungle-only     { opacity: 0 !important; }
 <div class="fish underwater-only" id="f3" style="left:0;top:15%;animation-duration:22s;animation-delay:-14s">🐟</div>
 <div class="fish underwater-only" id="f4" style="left:0;top:50%;animation-duration:30s;animation-delay:-4s">🐠</div>
 <div class="fish underwater-only" id="f5" style="left:0;top:65%;animation-duration:20s;animation-delay:-18s">🐟</div>
+
+<!-- School: pencils/stars left→right at top, buses/kids right→left at bottom -->
+<div class="kite school-only" id="sk1" style="left:0;top:5%;animation-duration:20s;animation-delay:0s">✏️</div>
+<div class="kite school-only" id="sk2" style="left:0;top:9%;animation-duration:28s;animation-delay:-7s">⭐</div>
+<div class="kite school-only" id="sk3" style="left:0;top:4%;animation-duration:16s;animation-delay:-13s">✏️</div>
+<div class="kite school-only" id="sk4" style="left:0;top:8%;animation-duration:24s;animation-delay:-3s">⭐</div>
+<div class="kite school-only" id="sk5" style="left:0;top:6%;animation-duration:32s;animation-delay:-18s">📐</div>
+<div class="seacraft school-only" id="ss1" style="left:0;bottom:9%;animation-duration:22s;animation-delay:0s">🚌</div>
+<div class="seacraft school-only" id="ss2" style="left:0;bottom:13%;animation-duration:30s;animation-delay:-8s">🧒</div>
+<div class="seacraft school-only" id="ss3" style="left:0;bottom:7%;animation-duration:18s;animation-delay:-14s">🚌</div>
+<div class="seacraft school-only" id="ss4" style="left:0;bottom:11%;animation-duration:26s;animation-delay:-4s">👧</div>
+<div class="seacraft school-only" id="ss5" style="left:0;bottom:8%;animation-duration:34s;animation-delay:-20s">🚌</div>
 
 <!-- Winter: snowflakes drift left→right at top, skiers/sledders right→left at bottom -->
 <div class="kite winter-only" id="wk1" style="left:0;top:5%;animation-duration:20s;animation-delay:0s">❄️</div>
@@ -426,6 +457,11 @@ body.theme-winter     .jungle-only     { opacity: 0 !important; }
   <div class="select-title">🌟 Tilli's<br>Crossword!</div>
   <p class="select-sub">Choose a level to play</p>
   <div class="level-cards">
+    <button class="level-card" onclick="startLevel('school')">
+      <span class="lc-emoji">🏫</span>
+      <span class="lc-name" style="color:#e65100">School</span>
+      <div class="lc-stars" id="stars-school">☆☆☆</div>
+    </button>
     <button class="level-card" onclick="startLevel('seaside')">
       <span class="lc-emoji">🏖️</span>
       <span class="lc-name" style="color:#0d47a1">Seaside</span>
@@ -563,6 +599,41 @@ const LEVELS = {
       { word:"MONKEY",    emoji:"🐒", dir:"down",   row:2, col:9 },
     ],
   },
+  school: {
+    title:    "🏫 School",
+    subtitle: "Find all 8 school words!",
+    winMsg:   "You found all 8 school words!",
+    GR: 10, GC: 11,
+    headColor:   "#e65100",
+    headShadow:  "#ffe0b2",
+    subColor:    "#bf360c",
+    progColor:   "#e65100",
+    progBg:      "#ffe0b2",
+    hintBg:      "rgba(255,255,255,0.92)",
+    hintDirColor:"#aaa",
+    lbBorder:    "#ddd",      lbColor:"#333",    lbBg:"#fafafa",
+    lbFilledBorder:"#e65100", lbFilledBg:"#fff3e0",
+    lbOkBorder:  "#2e7d32",  lbOkBg:"#e8f5e9",  lbOkColor:"#2e7d32",
+    gridBg:      "rgba(255,255,255,0.93)",
+    cellBorder:  "#ffcc80",   cellBg:"#fffde7",  cellColor:"#bf360c",
+    cellHiBg:    "#fff9c4",   cellHiBorder:"#f9a825",
+    cellOkBg:    "#e8f5e9",   cellOkBorder:"#2e7d32",
+    inputOk:     "#2e7d32",   inputErr:"#b71c1c",
+    kbBg:        "rgba(255,255,255,0.9)",
+    kbActive:    "#ffe0b2",
+    kbColor:     "#bf360c",
+    emojiOverrides: {},
+    WORDS: [
+      { word:"BACKPACK",  emoji:"🎒", dir:"across", row:3, col:2 },
+      { word:"RULER",     emoji:"📏", dir:"across", row:5, col:6 },
+      { word:"BUS",       emoji:"🚌", dir:"across", row:7, col:0 },
+      { word:"BOOKS",     emoji:"📚", dir:"down",   row:3, col:2 },
+      { word:"TEACHER",   emoji:"👩‍🏫", dir:"down",   row:0, col:4 },
+      { word:"PAPERCLIP", emoji:"📎", dir:"down",   row:1, col:6 },
+      { word:"PENCIL",    emoji:"✏️", dir:"down",   row:0, col:8 },
+      { word:"CRAYON",    emoji:"🖍️", dir:"down",   row:4, col:10 },
+    ],
+  },
   winter: {
     title:    "❄️ Winter",
     subtitle: "Find all 7 winter words!",
@@ -651,13 +722,17 @@ function setTheme(name) {
   document.body.classList.remove('theme-seaside', 'theme-underwater', 'theme-jungle');
   document.body.classList.add(`theme-${name}`);
 
-  // Seacraft always visible — swap emoji per level
+  // s1-s7 seacraft only shown on seaside and underwater
+  const isSeaLevel = name === 'seaside' || name === 'underwater';
   const seacraftEmoji = isSeaside
     ? ['🏄','⛵','🏄‍♀️','⛵','🏄','⛵','🏄‍♀️']
     : ['🐳','🦈','🐳','🪼','🦈','🐳','🪼'];
   seacraftEls.forEach((id,i) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = seacraftEmoji[i];
+    if (el) {
+      el.textContent = seacraftEmoji[i];
+      el.style.opacity = isSeaLevel ? '1' : '0';
+    }
   });
 
   // Wave / seabed
