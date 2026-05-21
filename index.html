@@ -330,30 +330,8 @@ h1 {
   );
 }
 
-/* ── THEME VISIBILITY ── */
-/* On body.theme-seaside: show seaside elements, hide underwater */
-body.theme-school     .school-only     { opacity: 1 !important; }
-body.theme-school     .seaside-only    { opacity: 0 !important; }
-body.theme-school     .underwater-only { opacity: 0 !important; }
-body.theme-school     .jungle-only     { opacity: 0 !important; }
-body.theme-school     .winter-only     { opacity: 0 !important; }
-body.theme-seaside    .seaside-only    { opacity: 1 !important; }
-body.theme-seaside    .underwater-only { opacity: 0 !important; }
-body.theme-seaside    .jungle-only     { opacity: 0 !important; }
-body.theme-seaside    .winter-only     { opacity: 0 !important; }
-body.theme-seaside    .school-only     { opacity: 0 !important; }
-body.theme-underwater .underwater-only { opacity: 1 !important; }
-body.theme-underwater .seaside-only    { opacity: 0 !important; }
-body.theme-underwater .jungle-only     { opacity: 0 !important; }
-body.theme-underwater .winter-only     { opacity: 0 !important; }
-body.theme-jungle     .jungle-only     { opacity: 1 !important; }
-body.theme-jungle     .seaside-only    { opacity: 0 !important; }
-body.theme-jungle     .underwater-only { opacity: 0 !important; }
-body.theme-jungle     .winter-only     { opacity: 0 !important; }
-body.theme-winter     .winter-only     { opacity: 1 !important; }
-body.theme-winter     .seaside-only    { opacity: 0 !important; }
-body.theme-winter     .underwater-only { opacity: 0 !important; }
-body.theme-winter     .jungle-only     { opacity: 0 !important; }
+/* ── THEME VISIBILITY — handled entirely by JS setTheme() ── */
+/* All themed elements start hidden */
 .seaside-only, .underwater-only, .jungle-only, .winter-only, .school-only { opacity: 0; }
 
 /* ── THEME COLOURS applied via JS ── */
@@ -711,29 +689,42 @@ const LEVELS = {
 // ═══════════════════════════════════════════════════════
 //  BACKGROUND THEME SWITCHER
 // ═══════════════════════════════════════════════════════
-const seasideEls  = ['bg-seaside','bgsun-seaside','c1','c2','c3','k1','k2','k3','k4','k5'];
-const underwaterEls = ['bg-underwater','bgsun-underwater','b1','b2','b3','b4','b5','b6','f1','f2','f3','f4','f5'];
-const seacraftEls = ['s1','s2','s3','s4','s5','s6','s7']; // shown on both, emoji swapped
+// All themed background element IDs grouped by level
+const THEME_ELS = {
+  seaside:    ['bg-seaside','bgsun-seaside','c1','c2','c3','k1','k2','k3','k4','k5','s1','s2','s3','s4','s5','s6','s7'],
+  underwater: ['bg-underwater','bgsun-underwater','b1','b2','b3','b4','b5','b6','f1','f2','f3','f4','f5','s1','s2','s3','s4','s5','s6','s7'],
+  jungle:     ['bg-jungle','j1','j2','j3','j4','j5','jl1','jl2','jl3','jl4','jl5'],
+  winter:     ['bg-winter','wk1','wk2','wk3','wk4','wk5','ws1','ws2','ws3','ws4','ws5'],
+  school:     ['bg-school','sk1','sk2','sk3','sk4','sk5','ss1','ss2','ss3','ss4','ss5'],
+};
+
+// All background element IDs across every level
+const ALL_BG_ELS = [...new Set(Object.values(THEME_ELS).flat())];
 
 function setTheme(name) {
-  const isSeaside = name === 'seaside';
-  // Toggle body class — CSS handles all show/hide via .seaside-only / .underwater-only
-  const isJungle = name === 'jungle';
-  document.body.classList.remove('theme-seaside', 'theme-underwater', 'theme-jungle');
-  document.body.classList.add(`theme-${name}`);
-
-  // s1-s7 seacraft only shown on seaside and underwater
-  const isSeaLevel = name === 'seaside' || name === 'underwater';
-  const seacraftEmoji = isSeaside
-    ? ['🏄','⛵','🏄‍♀️','⛵','🏄','⛵','🏄‍♀️']
-    : ['🐳','🦈','🐳','🪼','🦈','🐳','🪼'];
-  seacraftEls.forEach((id,i) => {
+  // 1. Hide EVERY background element
+  ALL_BG_ELS.forEach(id => {
     const el = document.getElementById(id);
-    if (el) {
-      el.textContent = seacraftEmoji[i];
-      el.style.opacity = isSeaLevel ? '1' : '0';
-    }
+    if (el) el.style.opacity = '0';
   });
+
+  // 2. Show only the elements for this level
+  (THEME_ELS[name] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = '1';
+  });
+
+  // 3. Swap seacraft emoji for sea levels
+  const isSeaside = name === 'seaside';
+  if (name === 'seaside' || name === 'underwater') {
+    const emoji = isSeaside
+      ? ['🏄','⛵','🏄‍♀️','⛵','🏄','⛵','🏄‍♀️']
+      : ['🐳','🦈','🐳','🪼','🦈','🐳','🪼'];
+    ['s1','s2','s3','s4','s5','s6','s7'].forEach((id,i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = emoji[i];
+    });
+  }
 
   // Wave / seabed
   const p1 = document.getElementById('wave-path1');
