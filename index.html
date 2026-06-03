@@ -304,6 +304,18 @@ h1 {
   100% { opacity:0; transform:translateY(105vh) rotate(720deg); }
 }
 
+/* ── FARMYARD BACKGROUND ── */
+.bg-farmyard {
+  background: linear-gradient(
+    180deg,
+    #87ceeb 0%,
+    #b0d4f1 30%,
+    #c8e6a0 55%,
+    #8bc34a 70%,
+    #558b2f 100%
+  );
+}
+
 /* ── SCHOOL BACKGROUND ── */
 .bg-school {
   background: linear-gradient(
@@ -351,6 +363,7 @@ h1 {
 
 <!-- ── BACKGROUNDS (both always present, opacity toggled) ── -->
 <div class="bg-layer bg-seaside seaside-only" id="bg-seaside"></div>
+<div class="bg-layer bg-farmyard" id="bg-farmyard" style="opacity:0"></div>
 <div class="bg-layer bg-school school-only" id="bg-school"></div>
 <div class="bg-layer bg-winter winter-only" id="bg-winter"></div>
 <div class="bg-layer bg-jungle jungle-only" id="bg-jungle"></div>
@@ -386,6 +399,18 @@ h1 {
 <div class="fish underwater-only" id="f3" style="left:0;top:15%;animation-duration:22s;animation-delay:-14s">🐟</div>
 <div class="fish underwater-only" id="f4" style="left:0;top:50%;animation-duration:30s;animation-delay:-4s">🐠</div>
 <div class="fish underwater-only" id="f5" style="left:0;top:65%;animation-duration:20s;animation-delay:-18s">🐟</div>
+
+<!-- Farmyard: birds left→right at top, animals right→left at bottom -->
+<div class="kite" id="fyk1" style="left:0;top:5%;animation-duration:18s;animation-delay:0s;opacity:0">🐦</div>
+<div class="kite" id="fyk2" style="left:0;top:9%;animation-duration:26s;animation-delay:-7s;opacity:0">🦆</div>
+<div class="kite" id="fyk3" style="left:0;top:4%;animation-duration:14s;animation-delay:-12s;opacity:0">🐦</div>
+<div class="kite" id="fyk4" style="left:0;top:8%;animation-duration:22s;animation-delay:-3s;opacity:0">🦆</div>
+<div class="kite" id="fyk5" style="left:0;top:6%;animation-duration:30s;animation-delay:-18s;opacity:0">🐔</div>
+<div class="seacraft" id="fys1" style="left:0;bottom:9%;animation-duration:22s;animation-delay:0s;opacity:0">🐄</div>
+<div class="seacraft" id="fys2" style="left:0;bottom:13%;animation-duration:30s;animation-delay:-8s;opacity:0">🚜</div>
+<div class="seacraft" id="fys3" style="left:0;bottom:7%;animation-duration:18s;animation-delay:-14s;opacity:0">🐑</div>
+<div class="seacraft" id="fys4" style="left:0;bottom:11%;animation-duration:26s;animation-delay:-4s;opacity:0">🐷</div>
+<div class="seacraft" id="fys5" style="left:0;bottom:8%;animation-duration:34s;animation-delay:-20s;opacity:0">🐴</div>
 
 <!-- School: pencils/stars left→right at top, buses/kids right→left at bottom -->
 <div class="kite school-only" id="sk1" style="left:0;top:5%;animation-duration:20s;animation-delay:0s">✏️</div>
@@ -449,6 +474,11 @@ h1 {
       <span class="lc-emoji">🏫</span>
       <span class="lc-name" style="color:#e65100">School</span>
       <div class="lc-stars" id="stars-school">☆☆☆</div>
+    </button>
+    <button class="level-card" onclick="startLevel('farmyard')">
+      <span class="lc-emoji">🐄</span>
+      <span class="lc-name" style="color:#4e342e">Farmyard</span>
+      <div class="lc-stars" id="stars-farmyard">☆☆☆</div>
     </button>
     <button class="level-card" onclick="startLevel('seaside')">
       <span class="lc-emoji">🏖️</span>
@@ -587,6 +617,40 @@ const LEVELS = {
       { word:"MONKEY",    emoji:"🐒", dir:"down",   row:2, col:9 },
     ],
   },
+  farmyard: {
+    title:    "🐄 Farmyard",
+    subtitle: "Find all 7 farmyard words!",
+    winMsg:   "You found all 7 farmyard words!",
+    GR: 9, GC: 10,
+    headColor:   "#4e342e",
+    headShadow:  "#ffcc80",
+    subColor:    "#5d4037",
+    progColor:   "#6d4c41",
+    progBg:      "#d7ccc8",
+    hintBg:      "rgba(255,255,255,0.92)",
+    hintDirColor:"#aaa",
+    lbBorder:    "#ddd",      lbColor:"#333",    lbBg:"#fafafa",
+    lbFilledBorder:"#6d4c41", lbFilledBg:"#efebe9",
+    lbOkBorder:  "#2e7d32",  lbOkBg:"#e8f5e9",  lbOkColor:"#2e7d32",
+    gridBg:      "rgba(255,255,255,0.93)",
+    cellBorder:  "#bcaaa4",   cellBg:"#fdf6ee",  cellColor:"#3e2723",
+    cellHiBg:    "#fff9c4",   cellHiBorder:"#f9a825",
+    cellOkBg:    "#e8f5e9",   cellOkBorder:"#2e7d32",
+    inputOk:     "#2e7d32",   inputErr:"#b71c1c",
+    kbBg:        "rgba(255,255,255,0.9)",
+    kbActive:    "#d7ccc8",
+    kbColor:     "#3e2723",
+    emojiOverrides: {},
+    WORDS: [
+      { word:"TRACTOR", emoji:"🚜", dir:"across", row:2, col:2 },
+      { word:"PIG",     emoji:"🐷", dir:"across", row:6, col:7 },
+      { word:"HORSE",   emoji:"🐴", dir:"across", row:7, col:1 },
+      { word:"COW",     emoji:"🐄", dir:"down",   row:6, col:2 },
+      { word:"FARMER",  emoji:"👨‍🌾", dir:"down",   row:0, col:3 },
+      { word:"CHICKEN", emoji:"🐔", dir:"down",   row:2, col:5 },
+      { word:"RABBIT",  emoji:"🐇", dir:"down",   row:2, col:8 },
+    ],
+  },
   school: {
     title:    "🏫 School",
     subtitle: "Find all 8 school words!",
@@ -706,6 +770,7 @@ const THEME_ELS = {
   jungle:     ['bg-jungle','j1','j2','j3','j4','j5','jl1','jl2','jl3','jl4','jl5'],
   winter:     ['bg-winter','wk1','wk2','wk3','wk4','wk5','ws1','ws2','ws3','ws4','ws5'],
   school:     ['bg-school','sk1','sk2','sk3','sk4','sk5','ss1','ss2','ss3','ss4','ss5'],
+  farmyard:   ['bg-farmyard','fyk1','fyk2','fyk3','fyk4','fyk5','fys1','fys2','fys3','fys4','fys5'],
 };
 
 // All background element IDs across every level
